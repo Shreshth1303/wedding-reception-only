@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <!-- Liquid Brushed Gold Gradient -->
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E5C378"/>
+      <stop offset="25%" stop-color="#FFF3D1"/>
+      <stop offset="50%" stop-color="#C59E4E"/>
+      <stop offset="75%" stop-color="#F5DE9C"/>
+      <stop offset="100%" stop-color="#9C772F"/>
+    </linearGradient>
+
+    <!-- Deep Midnight Radial Background -->
+    <radialGradient id="nightBg" cx="50%" cy="50%" r="65%">
+      <stop offset="0%" stop-color="#162035"/>
+      <stop offset="60%" stop-color="#101726"/>
+      <stop offset="100%" stop-color="#0B0E14"/>
+    </radialGradient>
+
+    <!-- Starburst Inner Glow -->
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Obsidian & Midnight Background Plate -->
+  <rect width="64" height="64" rx="14" fill="url(#nightBg)"/>
+  
+  <!-- Outer Gold Hairline Border -->
+  <rect x="2.5" y="2.5" width="59" height="59" rx="12" fill="none" stroke="url(#goldGradient)" stroke-width="1.2" stroke-opacity="0.85"/>
+  <rect x="5.5" y="5.5" width="53" height="53" rx="9" fill="none" stroke="url(#goldGradient)" stroke-width="0.5" stroke-dasharray="2 2" stroke-opacity="0.4"/>
+
+  <!-- Nocturnal Lantern & Starburst Glyph -->
+  <g id="lantern-starburst" transform="translate(32, 32)" filter="url(#softGlow)">
+    <!-- 8-Pointed Starburst Diamond Radiance -->
+    <path d="M 0,-21 L 4,-5 L 20,0 L 4,5 L 0,21 L -4,5 L -20,0 L -4,-5 Z" 
+          fill="url(#goldGradient)" opacity="0.95"/>
+    <path d="M 0,-14 L 3,-3 L 14,0 L 3,3 L 0,14 L -3,3 L -14,0 L -3,-3 Z" 
+          transform="rotate(45)" fill="#FFF3D1" opacity="0.75"/>
+    
+    <!-- Central Lantern Core / Jewel -->
+    <circle cx="0" cy="0" r="4.2" fill="#0B0E14" stroke="url(#goldGradient)" stroke-width="1.2"/>
+    <circle cx="0" cy="0" r="2.2" fill="#FFF3D1"/>
+
+    <!-- Delicate Suspension Chain & Accent Tassel -->
+    <line x1="0" y1="-21" x2="0" y2="-26" stroke="url(#goldGradient)" stroke-width="1" stroke-linecap="round"/>
+    <circle cx="0" cy="-26.5" r="1.2" fill="url(#goldGradient)"/>
+  </g>
+</svg>
