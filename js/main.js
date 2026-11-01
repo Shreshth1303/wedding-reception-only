@@ -340,6 +340,8 @@
     const promptClose = document.getElementById('autoplay-prompt-close');
 
     let fadeInterval = null;
+    let isStartingPlayback = false;
+    let lastPlayActionTime = 0;
 
     // Helper: Fade volume smoothly
     function fadeVolumeTo(targetVol, durationMs, callback) {
@@ -432,6 +434,8 @@
 
     // Play action
     async function playAudio() {
+      lastPlayActionTime = Date.now();
+      isStartingPlayback = true;
       try {
         audio.muted = false;
         audio.volume = TARGET_VOLUME;
@@ -440,11 +444,15 @@
           await playPromise;
           updatePlayState(true);
           updateMuteState(false);
-          fadeVolumeTo(TARGET_VOLUME, 600);
+          fadeVolumeTo(TARGET_VOLUME, 500);
         }
       } catch (err) {
         // Browser autoplay restriction encountered -> transparent immediate fallback
         startAutoPlayFallback();
+      } finally {
+        setTimeout(() => {
+          isStartingPlayback = false;
+        }, 500);
       }
     }
 
@@ -455,51 +463,43 @@
       startAutoPlayFallback();
     }
 
-    function startAutoPlayFallback() {
-      // 1. Start playback immediately in muted mode so the audio is already rolling
-      audio.muted = true;
-      audio.play().then(() => {
-        updatePlayState(true);
-        updateMuteState(true);
-      }).catch(() => {});
+    const triggerEvents = [
+      'pointerdown', 'mousedown', 'touchstart', 'click', 'keydown'
+    ];
 
-      // 2. Show the elegant golden prompt
+    function removeUnlockListeners() {
+      triggerEvents.forEach(evt => {
+        window.removeEventListener(evt, autoUnmuteAndPlay, { capture: true });
+        document.removeEventListener(evt, autoUnmuteAndPlay, { capture: true });
+      });
+    }
+
+    function autoUnmuteAndPlay(e) {
+      // If user clicked directly on an audio control button, let the button handler manage it
+      if (e && e.target && e.target.closest && e.target.closest('.audio-control-btn, .autoplay-prompt-pill')) {
+        return;
+      }
+      removeUnlockListeners();
+      playAudio();
+    }
+
+    function startAutoPlayFallback() {
+      // 1. Show the elegant golden prompt
       if (promptPill && sessionStorage.getItem(STORAGE_KEY_DISMISSED) !== 'true') {
         promptPill.classList.remove('hidden');
       }
 
-      // 3. Ultra-responsive entry event listeners
-      const triggerEvents = [
-        'pointerdown', 'mousedown', 'touchstart', 'scroll',
-        'wheel', 'keydown', 'mousemove', 'click', 'focus'
-      ];
-
-      function autoUnmuteAndPlay() {
-        triggerEvents.forEach(evt => {
-          window.removeEventListener(evt, autoUnmuteAndPlay, { capture: true });
-          document.removeEventListener(evt, autoUnmuteAndPlay, { capture: true });
-        });
-
-        audio.muted = false;
-        if (audio.paused) {
-          audio.play().catch(() => {});
-        }
-        fadeVolumeTo(TARGET_VOLUME, 800);
-        updatePlayState(true);
-        updateMuteState(false);
-        if (promptPill) {
-          promptPill.classList.add('hidden');
-        }
-      }
-
+      // 2. Attach clean unlock listeners for genuine user activation events
       triggerEvents.forEach(evt => {
-        window.addEventListener(evt, autoUnmuteAndPlay, { capture: true, passive: true, once: true });
-        document.addEventListener(evt, autoUnmuteAndPlay, { capture: true, passive: true, once: true });
+        window.addEventListener(evt, autoUnmuteAndPlay, { capture: true, passive: true });
+        document.addEventListener(evt, autoUnmuteAndPlay, { capture: true, passive: true });
       });
     }
 
     // Pause action
     function pauseAudio() {
+      // Guard: do not immediately toggle-pause if playback was just initiated within 600ms
+      if (Date.now() - lastPlayActionTime < 600) return;
       fadeVolumeTo(0, 300, () => {
         audio.pause();
         audio.volume = TARGET_VOLUME;
@@ -518,7 +518,8 @@
     playBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (audio.paused || audio.muted) {
+        removeUnlockListeners();
+        if (audio.paused || audio.muted || Date.now() - lastPlayActionTime < 600) {
           audio.muted = false;
           playAudio();
         } else {
