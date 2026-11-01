@@ -278,20 +278,19 @@
 
   /* ==========================================================================
      5. LUXURY AMBIENT BACKGROUND MUSIC CONTROLLER
-     - Melody: Johann Pachelbel's "Canon in D Major" arranged by Kevin MacLeod
-     - License: Creative Commons Attribution (CC BY 3.0 / 4.0)
+     - Melody: Kevin MacLeod's "Water Lily" (Royalty-Free / CC BY 3.0)
      - Features:
        * Automatic music playback immediately when visitor opens the website
        * Seamless unmuted playback or zero-latency instant unlock upon entry
        * Single global audio singleton preventing multiple audio overlaps
        * Persistent playback position across internal navigation & 404
-       * Smooth volume ramp-up (fade-in) to pleasant ambient level (~0.32)
+       * Rich, clear ambient volume (~0.70) with smooth fade-in
        * Desktop, tablet, and mobile synchronized controls
        * Accessible WCAG 2.1 keyboard operable controls & ARIA live updates
      ========================================================================== */
   function initBackgroundMusic() {
-    const AUDIO_SRC = 'assets/audio/canon-in-d.mp3';
-    const TARGET_VOLUME = 0.32;
+    const AUDIO_SRC = 'assets/audio/water-lily.mp3';
+    const TARGET_VOLUME = 0.70;
     const STORAGE_KEY_MUTED = 'wedding_audio_muted';
     const STORAGE_KEY_TIME = 'wedding_audio_time';
     const STORAGE_KEY_DISMISSED = 'wedding_audio_prompt_dismissed';
@@ -300,6 +299,9 @@
     if (!window.__GALA_AUDIO_INSTANCE__) {
       const existingAudio = document.getElementById('wedding-bg-audio');
       if (existingAudio) {
+        if (!existingAudio.src.includes('water-lily.mp3')) {
+          existingAudio.src = AUDIO_SRC;
+        }
         existingAudio.volume = TARGET_VOLUME;
         window.__GALA_AUDIO_INSTANCE__ = existingAudio;
       } else {
@@ -313,6 +315,9 @@
     }
     const audio = window.__GALA_AUDIO_INSTANCE__;
     audio.loop = true;
+    if (!audio.src.includes('water-lily.mp3')) {
+      audio.src = AUDIO_SRC;
+    }
 
     // Elements
     const playBtns = [

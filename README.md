@@ -34,16 +34,17 @@ An immersive, dark-mode digital celebration invitation designed with the **"Noct
 ---
 
 ## 🎵 Background Music Architecture
-- **Composition:** *"Canon in D Major"* composed by Johann Pachelbel.
-- **Arrangement & Performance:** Arranged and performed by Kevin MacLeod ([incompetech.com](https://incompetech.com)).
+- **Track:** *"Water Lily"* composed, arranged, and performed by Kevin MacLeod ([incompetech.com](https://incompetech.com)).
+- **Aesthetic Identity:** Serene acoustic guitar and warm orchestral strings designed for nocturnal gala celebrations.
 - **Licensing:** Licensed under Creative Commons: By Attribution 3.0 / 4.0 International ([CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)). Royalty-free and authorized for public performance.
-- **File Asset:** `assets/audio/canon-in-d.mp3` (optimized 192kbps MP3 stream, non-blocking `preload="metadata"`).
+- **File Asset:** `assets/audio/water-lily.mp3` (4.4 MB high-fidelity MP3 stream, non-blocking `preload="auto"`).
 - **Audio Experience Features:**
-  - **Browser Autoplay Handling:** Attempts automatic playback on load. If modern browser restrictions reject unmuted autoplay, an elegant golden pill prompt appears to enable playback with a single click. Natural user interaction anywhere on page smoothly begins playback.
-  - **Cross-Navigation State Persistence:** Audio playback timestamp, volume, and mute status are preserved in `sessionStorage` across internal jump links, page refreshes, and transitions between `index.html` and `404.html`.
+  - **Immediate Autoplay Attempt:** Triggers playback automatically on site entry.
+  - **Instant Gesture Unlock:** Browser autoplay limitations gracefully activate on the very first screen interaction (`pointerdown`, `click`, `touchstart`, `keydown`).
+  - **Audible Master Volume:** Calibrated to `0.70` (70%) with smooth fade-in curve for clear, comfortable listening across all device speakers.
+  - **Cross-Navigation State Persistence:** Playback timestamp, volume, and mute status are preserved in `sessionStorage` across internal jump links, page refreshes, and transitions between `index.html` and `404.html`.
   - **No Duplicate Audio Instances:** Managed as a global singleton audio engine.
   - **Comprehensive Multi-Device Controls:** Accessible controls in the top navigation bar (desktop & mobile), inside the mobile drawer, and via a floating bottom-right luxury capsule with animated equalizer bars.
-  - **Polite Initial Volume:** Set to ~0.32 with smooth fade-in curve to prevent startling visitors.
 
 ---
 

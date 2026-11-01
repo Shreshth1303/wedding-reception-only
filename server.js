@@ -36,6 +36,7 @@ const server = http.createServer((req, res) => {
   // Parse requested URL
   const parsedUrl = url.parse(req.url);
   let pathname = decodeURIComponent(parsedUrl.pathname);
+  console.log(`[HTTP] ${req.method} ${pathname} (Range: ${req.headers.range || 'none'})`);
 
   // Normalize path & prevent directory traversal attacks
   let safePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
@@ -84,20 +85,23 @@ const server = http.createServer((req, res) => {
         'Accept-Ranges': 'bytes',
         'Content-Length': chunkSize,
         'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=86400'
+        'Cache-Control': 'no-cache, must-revalidate',
+        'Pragma': 'no-cache'
       });
 
       fileStream.pipe(res);
       return;
     }
 
-    // Standard 200 OK File Delivery
+    // Standard 200 OK File Delivery with strict no-cache for development/preview
     res.writeHead(200, {
       'Content-Type': contentType,
       'Content-Length': totalSize,
       'Accept-Ranges': 'bytes',
       'X-Content-Type-Options': 'nosniff',
-      'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=86400'
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
     });
 
     const fileStream = fs.createReadStream(filePath);

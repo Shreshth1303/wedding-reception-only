@@ -34,13 +34,13 @@ async function runTests() {
   console.log('📁 1. Asset & Core Files Verification:');
   const indexHtmlPath = path.join(ROOT_DIR, 'index.html');
   const errorHtmlPath = path.join(ROOT_DIR, '404.html');
-  const audioFilePath = path.join(ROOT_DIR, 'assets', 'audio', 'canon-in-d.mp3');
+  const audioFilePath = path.join(ROOT_DIR, 'assets', 'audio', 'water-lily.mp3');
   const cssFilePath = path.join(ROOT_DIR, 'css', 'styles.css');
   const jsFilePath = path.join(ROOT_DIR, 'js', 'main.js');
 
   assert(fs.existsSync(indexHtmlPath), 'index.html exists');
   assert(fs.existsSync(errorHtmlPath), '404.html exists');
-  assert(fs.existsSync(audioFilePath), 'assets/audio/canon-in-d.mp3 exists');
+  assert(fs.existsSync(audioFilePath), 'assets/audio/water-lily.mp3 exists');
   assert(fs.existsSync(cssFilePath), 'css/styles.css exists');
   assert(fs.existsSync(jsFilePath), 'js/main.js exists');
 
@@ -112,7 +112,7 @@ async function runTests() {
   assert(jsContent.includes('sessionStorage'), 'Audio state uses sessionStorage for cross-navigation persistence');
   assert(jsContent.includes('showAutoplayPrompt') || jsContent.includes('startAutoPlayFallback'), 'Audio engine provides graceful autoplay failure fallback');
   assert(indexContent.includes('wedding-bg-audio'), 'index.html contains native background audio element for automatic playback');
-  assert(jsContent.includes('canon-in-d.mp3'), 'Audio points to royalty-free Canon in D asset');
+  assert(jsContent.includes('water-lily.mp3'), 'Audio points to royalty-free Water Lily asset');
   assert(indexContent.includes('floating-music-capsule'), 'index.html contains floating ambient music capsule');
   assert(indexContent.includes('autoplay-prompt-pill'), 'index.html contains autoplay fallback prompt pill');
 
@@ -171,11 +171,11 @@ async function runTests() {
   assert(jsRes.statusCode === 200 && jsRes.headers['content-type'].includes('javascript'), 'GET /js/main.js returns HTTP 200 with javascript');
 
   // 5d. Audio asset delivery & Range streaming
-  const audioRes = await request('/assets/audio/canon-in-d.mp3');
+  const audioRes = await request('/assets/audio/water-lily.mp3');
   assert(audioRes.statusCode === 200 && audioRes.headers['content-type'] === 'audio/mpeg', 'GET audio asset returns HTTP 200 with audio/mpeg');
   assert(audioRes.headers['accept-ranges'] === 'bytes', 'Audio server advertises Accept-Ranges: bytes');
 
-  const rangeRes = await request('/assets/audio/canon-in-d.mp3', { Range: 'bytes=0-1023' });
+  const rangeRes = await request('/assets/audio/water-lily.mp3', { Range: 'bytes=0-1023' });
   assert(rangeRes.statusCode === 206, 'Audio Range request returns HTTP 206 Partial Content');
   assert(rangeRes.headers['content-range'].startsWith('bytes 0-1023/'), 'Range request returns correct Content-Range header');
 
