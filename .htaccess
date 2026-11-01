@@ -12,3 +12,4 @@ Options -Indexes
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule ^.*$ /404.html [L,R=404]
 </IfModule>
+

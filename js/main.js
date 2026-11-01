@@ -281,32 +281,38 @@
      - Melody: Johann Pachelbel's "Canon in D Major" arranged by Kevin MacLeod
      - License: Creative Commons Attribution (CC BY 3.0 / 4.0)
      - Features:
-       * Intelligent browser autoplay handling with graceful fallback
+       * Automatic music playback immediately when visitor opens the website
+       * Seamless unmuted playback or zero-latency instant unlock upon entry
        * Single global audio singleton preventing multiple audio overlaps
-       * Persistent playback position & state across internal navigation / 404
+       * Persistent playback position across internal navigation & 404
        * Smooth volume ramp-up (fade-in) to pleasant ambient level (~0.32)
        * Desktop, tablet, and mobile synchronized controls
-       * Non-blocking asset loading with preload='metadata'
        * Accessible WCAG 2.1 keyboard operable controls & ARIA live updates
      ========================================================================== */
   function initBackgroundMusic() {
     const AUDIO_SRC = 'assets/audio/canon-in-d.mp3';
     const TARGET_VOLUME = 0.32;
-    const STORAGE_KEY_ENABLED = 'wedding_audio_enabled';
     const STORAGE_KEY_MUTED = 'wedding_audio_muted';
     const STORAGE_KEY_TIME = 'wedding_audio_time';
     const STORAGE_KEY_DISMISSED = 'wedding_audio_prompt_dismissed';
 
-    // Singleton audio instance across the window
+    // Singleton audio instance: reuse DOM element or initialize once
     if (!window.__GALA_AUDIO_INSTANCE__) {
-      const audio = new Audio();
-      audio.src = AUDIO_SRC;
-      audio.loop = true;
-      audio.preload = 'metadata'; // Non-blocking: only load metadata initially
-      audio.volume = TARGET_VOLUME;
-      window.__GALA_AUDIO_INSTANCE__ = audio;
+      const existingAudio = document.getElementById('wedding-bg-audio');
+      if (existingAudio) {
+        existingAudio.volume = TARGET_VOLUME;
+        window.__GALA_AUDIO_INSTANCE__ = existingAudio;
+      } else {
+        const audio = new Audio(AUDIO_SRC);
+        audio.id = 'wedding-bg-audio';
+        audio.loop = true;
+        audio.preload = 'auto';
+        audio.volume = TARGET_VOLUME;
+        window.__GALA_AUDIO_INSTANCE__ = audio;
+      }
     }
     const audio = window.__GALA_AUDIO_INSTANCE__;
+    audio.loop = true;
 
     // Elements
     const playBtns = [
@@ -338,7 +344,7 @@
     // Helper: Fade volume smoothly
     function fadeVolumeTo(targetVol, durationMs, callback) {
       if (fadeInterval) clearInterval(fadeInterval);
-      const stepTime = 50;
+      const stepTime = 40;
       const steps = Math.max(1, durationMs / stepTime);
       const startVol = audio.volume;
       const volDelta = (targetVol - startVol) / steps;
@@ -376,14 +382,14 @@
       });
 
       visualizers.forEach(v => {
-        if (isPlaying) {
+        if (isPlaying && !audio.muted) {
           v.classList.add('is-playing');
         } else {
           v.classList.remove('is-playing');
         }
       });
 
-      if (promptPill && isPlaying) {
+      if (promptPill && isPlaying && !audio.muted) {
         promptPill.classList.add('hidden');
       }
     }
@@ -405,42 +411,99 @@
           btn.setAttribute('title', 'Mute background music');
         }
       });
+
+      visualizers.forEach(v => {
+        if (!isMuted && !audio.paused) {
+          v.classList.add('is-playing');
+        } else {
+          v.classList.remove('is-playing');
+        }
+      });
+    }
+
+    // Restore saved playback timestamp across internal navigation
+    const savedTime = sessionStorage.getItem(STORAGE_KEY_TIME);
+    if (savedTime && (!audio.currentTime || audio.currentTime < 1)) {
+      const parsed = parseFloat(savedTime);
+      if (!isNaN(parsed) && isFinite(parsed) && parsed < (audio.duration || 300)) {
+        try { audio.currentTime = parsed; } catch (e) {}
+      }
     }
 
     // Play action
     async function playAudio() {
       try {
-        // Restore saved position if starting fresh
-        const savedTime = sessionStorage.getItem(STORAGE_KEY_TIME);
-        if (savedTime && (!audio.currentTime || audio.currentTime < 1)) {
-          const parsed = parseFloat(savedTime);
-          if (!isNaN(parsed) && isFinite(parsed) && parsed < (audio.duration || 300)) {
-            audio.currentTime = parsed;
-          }
-        }
-
-        audio.volume = 0.05;
+        audio.muted = false;
+        audio.volume = TARGET_VOLUME;
         const playPromise = audio.play();
         if (playPromise !== undefined) {
           await playPromise;
           updatePlayState(true);
-          sessionStorage.setItem(STORAGE_KEY_ENABLED, 'true');
-          fadeVolumeTo(TARGET_VOLUME, 1000);
+          updateMuteState(false);
+          fadeVolumeTo(TARGET_VOLUME, 600);
         }
       } catch (err) {
-        // Autoplay policy prevented playback
-        updatePlayState(false);
-        showAutoplayPrompt();
+        // Browser autoplay restriction encountered -> transparent immediate fallback
+        startAutoPlayFallback();
       }
+    }
+
+    // High-responsiveness AutoPlay Fallback:
+    // Starts playing muted immediately (which is ALWAYS permitted by browsers),
+    // and instantly un-mutes with sound upon the very first user interaction signal!
+    function showAutoplayPrompt() {
+      startAutoPlayFallback();
+    }
+
+    function startAutoPlayFallback() {
+      // 1. Start playback immediately in muted mode so the audio is already rolling
+      audio.muted = true;
+      audio.play().then(() => {
+        updatePlayState(true);
+        updateMuteState(true);
+      }).catch(() => {});
+
+      // 2. Show the elegant golden prompt
+      if (promptPill && sessionStorage.getItem(STORAGE_KEY_DISMISSED) !== 'true') {
+        promptPill.classList.remove('hidden');
+      }
+
+      // 3. Ultra-responsive entry event listeners
+      const triggerEvents = [
+        'pointerdown', 'mousedown', 'touchstart', 'scroll',
+        'wheel', 'keydown', 'mousemove', 'click', 'focus'
+      ];
+
+      function autoUnmuteAndPlay() {
+        triggerEvents.forEach(evt => {
+          window.removeEventListener(evt, autoUnmuteAndPlay, { capture: true });
+          document.removeEventListener(evt, autoUnmuteAndPlay, { capture: true });
+        });
+
+        audio.muted = false;
+        if (audio.paused) {
+          audio.play().catch(() => {});
+        }
+        fadeVolumeTo(TARGET_VOLUME, 800);
+        updatePlayState(true);
+        updateMuteState(false);
+        if (promptPill) {
+          promptPill.classList.add('hidden');
+        }
+      }
+
+      triggerEvents.forEach(evt => {
+        window.addEventListener(evt, autoUnmuteAndPlay, { capture: true, passive: true, once: true });
+        document.addEventListener(evt, autoUnmuteAndPlay, { capture: true, passive: true, once: true });
+      });
     }
 
     // Pause action
     function pauseAudio() {
-      fadeVolumeTo(0, 350, () => {
+      fadeVolumeTo(0, 300, () => {
         audio.pause();
         audio.volume = TARGET_VOLUME;
         updatePlayState(false);
-        sessionStorage.setItem(STORAGE_KEY_ENABLED, 'false');
       });
     }
 
@@ -451,29 +514,12 @@
       sessionStorage.setItem(STORAGE_KEY_MUTED, audio.muted ? 'true' : 'false');
     }
 
-    // Show autoplay invitation prompt
-    function showAutoplayPrompt() {
-      if (!promptPill) return;
-      if (sessionStorage.getItem(STORAGE_KEY_DISMISSED) === 'true') return;
-      promptPill.classList.remove('hidden');
-
-      // One-time natural interaction fallback (click/tap anywhere on page unlocks audio)
-      const onFirstGesture = () => {
-        document.removeEventListener('click', onFirstGesture);
-        document.removeEventListener('touchstart', onFirstGesture);
-        if (audio.paused && sessionStorage.getItem(STORAGE_KEY_ENABLED) !== 'false') {
-          playAudio();
-        }
-      };
-      document.addEventListener('click', onFirstGesture, { once: true, passive: true });
-      document.addEventListener('touchstart', onFirstGesture, { once: true, passive: true });
-    }
-
     // Wire play buttons
     playBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (audio.paused) {
+        if (audio.paused || audio.muted) {
+          audio.muted = false;
           playAudio();
         } else {
           pauseAudio();
@@ -493,6 +539,7 @@
     if (promptTrigger) {
       promptTrigger.addEventListener('click', (e) => {
         e.stopPropagation();
+        audio.muted = false;
         playAudio();
       });
     }
@@ -521,7 +568,7 @@
       if (!audio.paused && audio.currentTime > 0) {
         sessionStorage.setItem(STORAGE_KEY_TIME, audio.currentTime.toString());
       }
-    }, 1500);
+    }, 1200);
 
     window.addEventListener('beforeunload', () => {
       if (audio.currentTime > 0) {
@@ -529,33 +576,24 @@
       }
     });
 
-    // Restore muted state
-    const savedMuted = sessionStorage.getItem(STORAGE_KEY_MUTED);
-    if (savedMuted === 'true') {
-      audio.muted = true;
-      updateMuteState(true);
-    } else {
-      audio.muted = false;
-      updateMuteState(false);
-    }
-
-    // Initial check: attempt autoplay unless user previously explicitly paused
-    const userExplicitlyPaused = sessionStorage.getItem(STORAGE_KEY_ENABLED) === 'false';
-    if (!userExplicitlyPaused) {
-      playAudio();
-    } else {
-      updatePlayState(false);
-    }
+    // Automatically trigger playback on site open
+    playAudio();
   }
 
   /* ==========================================================================
-     INITIALIZATION ON DOM READY
+     INITIALIZATION
      ========================================================================== */
-  document.addEventListener('DOMContentLoaded', () => {
+  function initAll() {
     initStarfield();
     initCountdown();
     initCalendarActions();
     initNavigation();
     initBackgroundMusic();
-  });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAll);
+  } else {
+    initAll();
+  }
 })();

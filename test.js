@@ -110,7 +110,8 @@ async function runTests() {
   const jsContent = fs.readFileSync(jsFilePath, 'utf8');
   assert(jsContent.includes('initBackgroundMusic'), 'js/main.js defines initBackgroundMusic()');
   assert(jsContent.includes('sessionStorage'), 'Audio state uses sessionStorage for cross-navigation persistence');
-  assert(jsContent.includes('showAutoplayPrompt'), 'Audio engine provides graceful autoplay failure fallback');
+  assert(jsContent.includes('showAutoplayPrompt') || jsContent.includes('startAutoPlayFallback'), 'Audio engine provides graceful autoplay failure fallback');
+  assert(indexContent.includes('wedding-bg-audio'), 'index.html contains native background audio element for automatic playback');
   assert(jsContent.includes('canon-in-d.mp3'), 'Audio points to royalty-free Canon in D asset');
   assert(indexContent.includes('floating-music-capsule'), 'index.html contains floating ambient music capsule');
   assert(indexContent.includes('autoplay-prompt-pill'), 'index.html contains autoplay fallback prompt pill');

@@ -1,2 +1,3 @@
 # Catch-all 404 routing: Return HTTP 404 status code with custom 404 page
 /*    /404.html    404
+
