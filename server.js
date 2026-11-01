@@ -123,12 +123,29 @@ function serve404(res) {
   });
 }
 
-if (require.main === module) {
-  server.listen(PORT, () => {
-    console.log(`Celebration Invitation Server running at: http://localhost:${PORT}`);
+function startServer(portToTry) {
+  server.listen(portToTry, '0.0.0.0', () => {
+    console.log(`Celebration Invitation Server running at: http://localhost:${portToTry}`);
     console.log(`- 404 fallback configured for nonexistent paths.`);
     console.log(`- Audio streaming & range requests enabled.`);
   });
+}
+
+if (require.main === module) {
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      const nextPort = (err.port || PORT) + 1;
+      console.warn(`Port ${err.port || PORT} is busy, trying port ${nextPort}...`);
+      setTimeout(() => {
+        server.close();
+        startServer(nextPort);
+      }, 200);
+    } else {
+      console.error('Server error:', err);
+    }
+  });
+
+  startServer(PORT);
 }
 
 module.exports = server;
