@@ -1,0 +1,14 @@
+# Custom 404 Error Document with HTTP 404 status
+ErrorDocument 404 /404.html
+
+# Prevent directory browsing
+Options -Indexes
+
+# Fallback for non-existent paths returning HTTP 404 with 404.html
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^.*$ /404.html [L,R=404]
+</IfModule>

@@ -211,7 +211,7 @@
   }
 
   /* ==========================================================================
-     4. HEADER SCROLL EFFECT & MOBILE NAVIGATION DRAWER
+     4. HEADER SCROLL EFFECT & RESPONSIVE NAVIGATION
      ========================================================================== */
   function initNavigation() {
     const header = document.querySelector('.ambient-header');
@@ -256,122 +256,296 @@
         }
       });
     }
+
+    // Smooth scroll for hash links with safe destination validation
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        const hash = this.getAttribute('href');
+        if (hash === '#' || !hash) return;
+        const targetEl = document.querySelector(hash);
+        if (targetEl) {
+          e.preventDefault();
+          targetEl.scrollIntoView({ behavior: 'smooth' });
+          if (history.pushState) {
+            history.pushState(null, null, hash);
+          } else {
+            location.hash = hash;
+          }
+        }
+      });
+    });
   }
 
   /* ==========================================================================
-     6. CELESTIAL AMBIENT GALA AUDIO SYNTHESIZER (WEB AUDIO API)
+     5. LUXURY AMBIENT BACKGROUND MUSIC CONTROLLER
+     - Melody: Johann Pachelbel's "Canon in D Major" arranged by Kevin MacLeod
+     - License: Creative Commons Attribution (CC BY 3.0 / 4.0)
+     - Features:
+       * Intelligent browser autoplay handling with graceful fallback
+       * Single global audio singleton preventing multiple audio overlaps
+       * Persistent playback position & state across internal navigation / 404
+       * Smooth volume ramp-up (fade-in) to pleasant ambient level (~0.32)
+       * Desktop, tablet, and mobile synchronized controls
+       * Non-blocking asset loading with preload='metadata'
+       * Accessible WCAG 2.1 keyboard operable controls & ARIA live updates
      ========================================================================== */
-  function initAmbientAudio() {
-    const audioBtn = document.getElementById('audio-toggle-btn');
-    if (!audioBtn) return;
+  function initBackgroundMusic() {
+    const AUDIO_SRC = 'assets/audio/canon-in-d.mp3';
+    const TARGET_VOLUME = 0.32;
+    const STORAGE_KEY_ENABLED = 'wedding_audio_enabled';
+    const STORAGE_KEY_MUTED = 'wedding_audio_muted';
+    const STORAGE_KEY_TIME = 'wedding_audio_time';
+    const STORAGE_KEY_DISMISSED = 'wedding_audio_prompt_dismissed';
 
-    let audioCtx = null;
-    let isPlaying = false;
-    let masterGain = null;
-    let oscillators = [];
+    // Singleton audio instance across the window
+    if (!window.__GALA_AUDIO_INSTANCE__) {
+      const audio = new Audio();
+      audio.src = AUDIO_SRC;
+      audio.loop = true;
+      audio.preload = 'metadata'; // Non-blocking: only load metadata initially
+      audio.volume = TARGET_VOLUME;
+      window.__GALA_AUDIO_INSTANCE__ = audio;
+    }
+    const audio = window.__GALA_AUDIO_INSTANCE__;
 
-    // Frequencies of a warm nocturnal major 9th chord: F3, C4, E4, G4, A4
-    const chordFrequencies = [174.61, 261.63, 329.63, 392.00, 440.00];
+    // Elements
+    const playBtns = [
+      document.getElementById('audio-play-btn'),
+      document.getElementById('mobile-audio-play-btn'),
+      document.getElementById('capsule-play-btn'),
+      document.getElementById('audio-toggle-btn')
+    ].filter(Boolean);
 
-    function startAmbience() {
+    const muteBtns = [
+      document.getElementById('audio-mute-btn'),
+      document.getElementById('mobile-audio-mute-btn'),
+      document.getElementById('capsule-mute-btn')
+    ].filter(Boolean);
+
+    const visualizers = [
+      document.getElementById('nav-visualizer'),
+      document.getElementById('capsule-visualizer')
+    ].filter(Boolean);
+
+    const floatingCapsule = document.getElementById('floating-music-capsule');
+    const minimizeBtn = document.getElementById('capsule-minimize-btn');
+    const promptPill = document.getElementById('autoplay-prompt-pill');
+    const promptTrigger = document.getElementById('autoplay-prompt-trigger');
+    const promptClose = document.getElementById('autoplay-prompt-close');
+
+    let fadeInterval = null;
+
+    // Helper: Fade volume smoothly
+    function fadeVolumeTo(targetVol, durationMs, callback) {
+      if (fadeInterval) clearInterval(fadeInterval);
+      const stepTime = 50;
+      const steps = Math.max(1, durationMs / stepTime);
+      const startVol = audio.volume;
+      const volDelta = (targetVol - startVol) / steps;
+      let currentStep = 0;
+
+      fadeInterval = setInterval(() => {
+        currentStep++;
+        const newVol = Math.max(0, Math.min(1, audio.volume + volDelta));
+        audio.volume = newVol;
+        if (currentStep >= steps || Math.abs(audio.volume - targetVol) < 0.01) {
+          audio.volume = targetVol;
+          clearInterval(fadeInterval);
+          fadeInterval = null;
+          if (callback) callback();
+        }
+      }, stepTime);
+    }
+
+    // Helper: Update UI for Play/Pause
+    function updatePlayState(isPlaying) {
+      playBtns.forEach(btn => {
+        const playIcon = btn.querySelector('.icon-play');
+        const pauseIcon = btn.querySelector('.icon-pause');
+        if (isPlaying) {
+          if (playIcon) playIcon.style.display = 'none';
+          if (pauseIcon) pauseIcon.style.display = 'inline-block';
+          btn.setAttribute('aria-label', 'Pause celebration background music');
+          btn.setAttribute('title', 'Pause background music');
+        } else {
+          if (playIcon) playIcon.style.display = 'inline-block';
+          if (pauseIcon) pauseIcon.style.display = 'none';
+          btn.setAttribute('aria-label', 'Play celebration background music');
+          btn.setAttribute('title', 'Play background music');
+        }
+      });
+
+      visualizers.forEach(v => {
+        if (isPlaying) {
+          v.classList.add('is-playing');
+        } else {
+          v.classList.remove('is-playing');
+        }
+      });
+
+      if (promptPill && isPlaying) {
+        promptPill.classList.add('hidden');
+      }
+    }
+
+    // Helper: Update UI for Mute/Unmute
+    function updateMuteState(isMuted) {
+      muteBtns.forEach(btn => {
+        const soundIcon = btn.querySelector('.icon-sound');
+        const muteIcon = btn.querySelector('.icon-mute');
+        if (isMuted) {
+          if (soundIcon) soundIcon.style.display = 'none';
+          if (muteIcon) muteIcon.style.display = 'inline-block';
+          btn.setAttribute('aria-label', 'Unmute celebration background music');
+          btn.setAttribute('title', 'Unmute background music');
+        } else {
+          if (soundIcon) soundIcon.style.display = 'inline-block';
+          if (muteIcon) muteIcon.style.display = 'none';
+          btn.setAttribute('aria-label', 'Mute celebration background music');
+          btn.setAttribute('title', 'Mute background music');
+        }
+      });
+    }
+
+    // Play action
+    async function playAudio() {
       try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        audioCtx = new AudioContext();
-
-        masterGain = audioCtx.createGain();
-        masterGain.gain.setValueAtTime(0.001, audioCtx.currentTime);
-        masterGain.gain.exponentialRampToValueAtTime(0.08, audioCtx.currentTime + 3);
-
-        const filter = audioCtx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(450, audioCtx.currentTime);
-
-        masterGain.connect(filter);
-        filter.connect(audioCtx.destination);
-
-        oscillators = chordFrequencies.map((freq, idx) => {
-          const osc = audioCtx.createOscillator();
-          const panner = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
-          
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-
-          // Subtle slow detune vibrato
-          const lfo = audioCtx.createOscillator();
-          const lfoGain = audioCtx.createGain();
-          lfo.frequency.value = 0.15 + idx * 0.05;
-          lfoGain.gain.value = 1.2;
-          lfo.connect(lfoGain);
-          lfoGain.connect(osc.frequency);
-          lfo.start();
-
-          if (panner) {
-            panner.pan.value = (idx % 2 === 0 ? 0.35 : -0.35);
-            osc.connect(panner);
-            panner.connect(masterGain);
-          } else {
-            osc.connect(masterGain);
+        // Restore saved position if starting fresh
+        const savedTime = sessionStorage.getItem(STORAGE_KEY_TIME);
+        if (savedTime && (!audio.currentTime || audio.currentTime < 1)) {
+          const parsed = parseFloat(savedTime);
+          if (!isNaN(parsed) && isFinite(parsed) && parsed < (audio.duration || 300)) {
+            audio.currentTime = parsed;
           }
+        }
 
-          osc.start();
-          return osc;
-        });
-
-        isPlaying = true;
-        audioBtn.classList.add('playing');
-        audioBtn.setAttribute('aria-label', 'Pause nocturnal gala soundscape');
-        audioBtn.setAttribute('title', 'Pause nocturnal gala soundscape');
-        updateAudioBtnIcon(true);
+        audio.volume = 0.05;
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          await playPromise;
+          updatePlayState(true);
+          sessionStorage.setItem(STORAGE_KEY_ENABLED, 'true');
+          fadeVolumeTo(TARGET_VOLUME, 1000);
+        }
       } catch (err) {
-        console.warn('AudioContext not supported or blocked:', err);
+        // Autoplay policy prevented playback
+        updatePlayState(false);
+        showAutoplayPrompt();
       }
     }
 
-    function stopAmbience() {
-      if (masterGain && audioCtx) {
-        masterGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1.5);
-        setTimeout(() => {
-          oscillators.forEach(osc => osc.stop());
-          oscillators = [];
-          if (audioCtx && audioCtx.state !== 'closed') {
-            audioCtx.close();
-          }
-          audioCtx = null;
-        }, 1600);
-      }
-      isPlaying = false;
-      audioBtn.classList.remove('playing');
-      audioBtn.setAttribute('aria-label', 'Play nocturnal gala soundscape');
-      audioBtn.setAttribute('title', 'Play nocturnal gala soundscape');
-      updateAudioBtnIcon(false);
+    // Pause action
+    function pauseAudio() {
+      fadeVolumeTo(0, 350, () => {
+        audio.pause();
+        audio.volume = TARGET_VOLUME;
+        updatePlayState(false);
+        sessionStorage.setItem(STORAGE_KEY_ENABLED, 'false');
+      });
     }
 
-    function updateAudioBtnIcon(playing) {
-      if (playing) {
-        audioBtn.innerHTML = `
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-          </svg>
-        `;
-      } else {
-        audioBtn.innerHTML = `
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-            <line x1="23" y1="9" x2="17" y2="15"></line>
-            <line x1="17" y1="9" x2="23" y2="15"></line>
-          </svg>
-        `;
-      }
+    // Mute toggle
+    function toggleMute() {
+      audio.muted = !audio.muted;
+      updateMuteState(audio.muted);
+      sessionStorage.setItem(STORAGE_KEY_MUTED, audio.muted ? 'true' : 'false');
     }
 
-    audioBtn.addEventListener('click', () => {
-      if (!isPlaying) {
-        startAmbience();
-      } else {
-        stopAmbience();
+    // Show autoplay invitation prompt
+    function showAutoplayPrompt() {
+      if (!promptPill) return;
+      if (sessionStorage.getItem(STORAGE_KEY_DISMISSED) === 'true') return;
+      promptPill.classList.remove('hidden');
+
+      // One-time natural interaction fallback (click/tap anywhere on page unlocks audio)
+      const onFirstGesture = () => {
+        document.removeEventListener('click', onFirstGesture);
+        document.removeEventListener('touchstart', onFirstGesture);
+        if (audio.paused && sessionStorage.getItem(STORAGE_KEY_ENABLED) !== 'false') {
+          playAudio();
+        }
+      };
+      document.addEventListener('click', onFirstGesture, { once: true, passive: true });
+      document.addEventListener('touchstart', onFirstGesture, { once: true, passive: true });
+    }
+
+    // Wire play buttons
+    playBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (audio.paused) {
+          playAudio();
+        } else {
+          pauseAudio();
+        }
+      });
+    });
+
+    // Wire mute buttons
+    muteBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleMute();
+      });
+    });
+
+    // Wire prompt trigger
+    if (promptTrigger) {
+      promptTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        playAudio();
+      });
+    }
+
+    // Wire prompt dismiss
+    if (promptClose) {
+      promptClose.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (promptPill) promptPill.classList.add('hidden');
+        sessionStorage.setItem(STORAGE_KEY_DISMISSED, 'true');
+      });
+    }
+
+    // Wire minimize button for floating capsule
+    if (minimizeBtn && floatingCapsule) {
+      minimizeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        floatingCapsule.classList.toggle('minimized');
+        const isMin = floatingCapsule.classList.contains('minimized');
+        minimizeBtn.setAttribute('aria-label', isMin ? 'Expand music player' : 'Minimize music player');
+      });
+    }
+
+    // Track playback position periodically for page-to-page persistence
+    setInterval(() => {
+      if (!audio.paused && audio.currentTime > 0) {
+        sessionStorage.setItem(STORAGE_KEY_TIME, audio.currentTime.toString());
+      }
+    }, 1500);
+
+    window.addEventListener('beforeunload', () => {
+      if (audio.currentTime > 0) {
+        sessionStorage.setItem(STORAGE_KEY_TIME, audio.currentTime.toString());
       }
     });
+
+    // Restore muted state
+    const savedMuted = sessionStorage.getItem(STORAGE_KEY_MUTED);
+    if (savedMuted === 'true') {
+      audio.muted = true;
+      updateMuteState(true);
+    } else {
+      audio.muted = false;
+      updateMuteState(false);
+    }
+
+    // Initial check: attempt autoplay unless user previously explicitly paused
+    const userExplicitlyPaused = sessionStorage.getItem(STORAGE_KEY_ENABLED) === 'false';
+    if (!userExplicitlyPaused) {
+      playAudio();
+    } else {
+      updatePlayState(false);
+    }
   }
 
   /* ==========================================================================
@@ -382,7 +556,6 @@
     initCountdown();
     initCalendarActions();
     initNavigation();
-    initAmbientAudio();
+    initBackgroundMusic();
   });
 })();
-

@@ -16,7 +16,7 @@ An immersive, dark-mode digital celebration invitation designed with the **"Noct
   - GPU-accelerated nocturnal canvas starfield with drifting golden dust.
   - Frosted dark glassmorphism cards (`backdrop-filter: blur(16px)`).
   - Gold hairline dividers with diamond emblems.
-  - Interactive celestial ambience chord synthesizer using the Web Audio API.
+  - Elegant ambient background music with intelligent browser autoplay and persistent playback.
 
 ---
 
@@ -33,26 +33,62 @@ An immersive, dark-mode digital celebration invitation designed with the **"Noct
 
 ---
 
+## 🎵 Background Music Architecture
+- **Composition:** *"Canon in D Major"* composed by Johann Pachelbel.
+- **Arrangement & Performance:** Arranged and performed by Kevin MacLeod ([incompetech.com](https://incompetech.com)).
+- **Licensing:** Licensed under Creative Commons: By Attribution 3.0 / 4.0 International ([CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)). Royalty-free and authorized for public performance.
+- **File Asset:** `assets/audio/canon-in-d.mp3` (optimized 192kbps MP3 stream, non-blocking `preload="metadata"`).
+- **Audio Experience Features:**
+  - **Browser Autoplay Handling:** Attempts automatic playback on load. If modern browser restrictions reject unmuted autoplay, an elegant golden pill prompt appears to enable playback with a single click. Natural user interaction anywhere on page smoothly begins playback.
+  - **Cross-Navigation State Persistence:** Audio playback timestamp, volume, and mute status are preserved in `sessionStorage` across internal jump links, page refreshes, and transitions between `index.html` and `404.html`.
+  - **No Duplicate Audio Instances:** Managed as a global singleton audio engine.
+  - **Comprehensive Multi-Device Controls:** Accessible controls in the top navigation bar (desktop & mobile), inside the mobile drawer, and via a floating bottom-right luxury capsule with animated equalizer bars.
+  - **Polite Initial Volume:** Set to ~0.32 with smooth fade-in curve to prevent startling visitors.
+
+---
+
+## 🚫 404 Fallback Routing & Navigation
+- **Navigation Menu Audit:** All navigation menus (desktop, mobile drawer, footer) are completely free of any links to error pages. All menu items point to valid sections (`#sacred-blessing`, `#honored-families`, `#evening-itinerary`, `#venue-showcase`) or valid external maps.
+- **Custom 404 Route (`404.html`):** Displays a polished *"Page Not Found"* badge, starlit canvas, warm guidance copy, audio controls, and a clear *"Return to Homepage"* button (`index.html`).
+- **Production Server Fallbacks:**
+  - `_redirects`: Fallback configuration for Netlify & Cloudflare Pages (`/* /404.html 404`).
+  - `vercel.json`: Fallback configuration for Vercel returning HTTP 404 status.
+  - `.htaccess`: Fallback configuration for Apache & LiteSpeed servers (`ErrorDocument 404 /404.html`).
+  - `server.js`: Native zero-dependency Node.js static server supporting byte-range audio streaming and genuine HTTP 404 responses.
+
+---
+
 ## 📁 Project Architecture
 ```
 wedding-reception-only/
 ├── index.html          # Main celebration invitation & interactive suites
-├── 404.html            # Matching midnight starlit 404 error screen
+├── 404.html            # Matching midnight starlit 404 error screen ("Page Not Found")
 ├── assets/
-│   └── favicon.svg     # Dynamic SVG favicon with golden starburst/lantern glyph
+│   ├── favicon.svg     # Dynamic SVG favicon with golden starburst/lantern glyph
+│   └── audio/
+│       └── canon-in-d.mp3 # Royalty-free Canon in D background audio track
 ├── css/
-│   └── styles.css      # Nocturnal luxury design system & glassmorphism rules
+│   └── styles.css      # Nocturnal luxury design system & audio visualizers
 ├── js/
-│   └── main.js         # Countdown, starfield canvas, .ics export & audio synth
+│   └── main.js         # Countdown, starfield canvas, .ics export & audio engine
+├── server.js           # Production & preview Node.js static server with 404 fallback
+├── test.js             # Automated QA test suite (41/41 passing tests)
+├── package.json        # NPM scripts ("npm start", "npm test")
+├── _redirects          # Netlify / Cloudflare Pages 404 fallback rule
+├── vercel.json         # Vercel 404 routing configuration
+├── .htaccess           # Apache / LiteSpeed 404 error document
 └── README.md           # Documentation & event details
 ```
 
 ---
 
-## 🚀 Key Features
-1. **Interactive Ambient Header:** Translucent glass navigation with animated "J&S" gold monogram, section jump anchors, and mobile drawer.
-2. **The Grand Evening Hero:** Sacred Quranic verse, prominent gold couple names, warm pearl parentage lineages, and a real-time countdown timer to 17th January 2027.
-3. **Banquet & Venue Showcase:** Floating luxury card with dual CTAs: direct Google Maps navigation and instant RFC 5545 `.ics` calendar file download.
-4. **Program Flow & Schedule:** Detailed evening itinerary from welcome sherbet to the grand royal banquet dinner.
-5. **Custom 404 Route:** Matching midnight theme page with starry canvas and celebration return CTA.
-6. **Accessibility & Integrity:** WCAG 44x44px minimum tap targets, zero dummy links, responsive across all viewports, and zero horizontal overflow (`overflow-x: hidden`).
+## 🧪 Testing & Verification
+To run the automated verification suite:
+```bash
+npm test
+```
+To run the local preview server:
+```bash
+npm start
+```
+Server runs at `http://localhost:3000`, returning genuine HTTP 404 for invalid URLs and serving streaming audio.

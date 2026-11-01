@@ -1,0 +1,21 @@
+{
+  "name": "wedding-reception-jassim-shifa",
+  "version": "1.0.0",
+  "description": "The Wedding Reception & Dinner of Jassim Hashim & Shifa Anis Khan — Nocturnal Luxury Celebration Invitation",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node test.js"
+  },
+  "keywords": [
+    "wedding",
+    "invitation",
+    "reception",
+    "luxury",
+    "ambient-music",
+    "audio"
+  ],
+  "author": "Jassim & Shifa",
+  "license": "UNLICENSED"
+}
