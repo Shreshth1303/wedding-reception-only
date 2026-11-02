@@ -49,7 +49,7 @@ An immersive, dark-mode digital celebration invitation designed with the **"Noct
 ---
 
 ## 🚫 404 Fallback Routing & Navigation
-- **Navigation Menu Audit:** All navigation menus (desktop, mobile drawer, footer) are completely free of any links to error pages. All menu items point to valid sections (`#sacred-blessing`, `#honored-families`, `#evening-itinerary`, `#venue-showcase`) or valid external maps.
+- **Navigation Menu Audit:** All navigation menus (desktop, mobile drawer, footer) are completely free of any links to error pages. All menu items point to valid sections (`#sacred-blessing`, `#honored-families`, `#venue-showcase`) or valid external maps.
 - **Custom 404 Route (`404.html`):** Displays a polished *"Page Not Found"* badge, starlit canvas, warm guidance copy, audio controls, and a clear *"Return to Homepage"* button (`index.html`).
 - **Production Server Fallbacks:**
   - `_redirects`: Fallback configuration for Netlify & Cloudflare Pages (`/* /404.html 404`).
@@ -67,13 +67,13 @@ wedding-reception-only/
 ├── assets/
 │   ├── favicon.svg     # Dynamic SVG favicon with golden starburst/lantern glyph
 │   └── audio/
-│       └── canon-in-d.mp3 # Royalty-free Canon in D background audio track
+│       └── water-lily.mp3  # Royalty-free Water Lily background audio track
 ├── css/
 │   └── styles.css      # Nocturnal luxury design system & audio visualizers
 ├── js/
 │   └── main.js         # Countdown, starfield canvas, .ics export & audio engine
 ├── server.js           # Production & preview Node.js static server with 404 fallback
-├── test.js             # Automated QA test suite (41/41 passing tests)
+├── test.js             # Automated QA test suite (42/42 passing tests)
 ├── package.json        # NPM scripts ("npm start", "npm test")
 ├── _redirects          # Netlify / Cloudflare Pages 404 fallback rule
 ├── vercel.json         # Vercel 404 routing configuration
